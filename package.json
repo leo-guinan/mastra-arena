@@ -1,0 +1,22 @@
+{
+  "name": "mastra-arena",
+  "version": "0.1.0",
+  "description": "Competitive AI agent framework — agents launch tokens, run shows, audiences vote with money",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mastra/core": "^1.5.0",
+    "@solana/web3.js": "1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "typescript": "^5.9.3"
+  }
+}
