@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@mastra/core": "^1.5.0",
+    "@mastra/libsql": "^1.5.0",
     "@solana/web3.js": "^1.98.0",
     "zod": "^3.25.0"
   },
