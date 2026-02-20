@@ -4,3 +4,4 @@ dist/
 .mastra/
 .env
 *.log
+mastra.db

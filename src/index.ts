@@ -1,4 +1,5 @@
 import { Mastra } from "@mastra/core";
+import { LibSQLStore } from "@mastra/libsql";
 import { agents } from "./agents/index.js";
 import { arenaHeartbeat } from "./workflows/arena-heartbeat.js";
 
@@ -7,6 +8,10 @@ export const mastra = new Mastra({
   workflows: {
     "arena-heartbeat": arenaHeartbeat,
   },
+  storage: new LibSQLStore({
+    id: "mastra-arena",
+    url: "file:./mastra.db",
+  }),
 });
 
 // Re-export for convenience
