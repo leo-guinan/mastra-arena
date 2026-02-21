@@ -17,6 +17,7 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 const AGENT_ID = process.env.AGENT_ID || 'marvin';
 const PORT = parseInt(process.env.PORT || '4000');
@@ -29,6 +30,25 @@ const STATE_FILE = path.join(AGENT_DIR, 'state.json');
 let SOUL = '';
 try { SOUL = fs.readFileSync(path.join(AGENT_DIR, 'SOUL.md'), 'utf8'); }
 catch { SOUL = `You are ${AGENT_ID}. Respond helpfully.`; }
+
+// Pyramid memory integration
+const PYRAMID_DIR = path.join(ARENA_DIR, 'pyramid');
+const MEMORY_DIR = path.join(AGENT_DIR, 'memory');
+
+function pyramidObserve(text) {
+  try {
+    execSync(
+      `cd ${PYRAMID_DIR} && python3 cli.py internal observe -w ${MEMORY_DIR} "${text.replace(/"/g, '\\"').slice(0, 500)}"`,
+      { timeout: 5000, stdio: 'pipe' }
+    );
+  } catch { /* silent — pyramid is optional enhancement */ }
+}
+
+function pyramidJournal() {
+  const memFile = path.join(MEMORY_DIR, 'MEMORY.md');
+  try { return fs.readFileSync(memFile, 'utf8'); }
+  catch { return null; }
+}
 
 // Load/save state
 function loadState() {
@@ -136,6 +156,9 @@ async function handler(req, res) {
       const { prompt } = JSON.parse(body);
       const result = await askLLM(prompt);
       
+      // Record observation in pyramid memory
+      pyramidObserve(`Asked: ${prompt.slice(0, 200)} → Responded with ${result.response?.slice(0, 200) || 'no response'}`);
+      
       // Update state
       const state = loadState();
       state.lastAsk = { prompt: prompt.slice(0, 100), time: new Date().toISOString() };
@@ -187,9 +210,36 @@ async function handler(req, res) {
       return;
     }
     
+    // GET /memory — pyramid memory contents
+    if (url.pathname === '/memory' && method === 'GET') {
+      const memory = pyramidJournal();
+      const modelsDir = path.join(MEMORY_DIR, 'models');
+      let models = {};
+      try {
+        const files = fs.readdirSync(modelsDir).filter(f => f.endsWith('.md'));
+        for (const f of files) {
+          models[f.replace('.md', '')] = fs.readFileSync(path.join(modelsDir, f), 'utf8');
+        }
+      } catch {}
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ memory: memory || 'No memory yet. Run pyramid sync.', models }));
+      return;
+    }
+    
+    // POST /observe — manually add an observation
+    if (url.pathname === '/observe' && method === 'POST') {
+      const body = await readBody(req);
+      const { observation } = JSON.parse(body);
+      pyramidObserve(observation);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, observation: observation.slice(0, 100) }));
+      return;
+    }
+    
     // 404
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found', endpoints: ['GET /health', 'GET /state', 'POST /ask', 'POST /tool/:name', 'POST /heartbeat'] }));
+    res.end(JSON.stringify({ error: 'Not found', endpoints: ['GET /health', 'GET /state', 'GET /memory', 'POST /ask', 'POST /tool/:name', 'POST /heartbeat', 'POST /observe'] }));
     
   } catch (e) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
