@@ -6,10 +6,12 @@ import { cronTools } from "../tools/cron.js";
 import { heartbeatTools } from "../tools/heartbeat.js";
 import { dexscreenerTools } from "../tools/dexscreener.js";
 import { farcasterTools } from "../tools/farcaster.js";
+import { holderIntelTools } from "../tools/holder-intel.js";
 
 const allTools = {
   ...walletTools, ...streamTools, ...cronTools,
   ...heartbeatTools, ...dexscreenerTools, ...farcasterTools,
+  ...holderIntelTools,
 };
 
 const openrouter = createOpenAI({
